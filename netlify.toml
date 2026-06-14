@@ -1,0 +1,8 @@
+[build]
+  command = "npm run build && cd functions && chmod +x build-go-functions.sh && ./build-go-functions.sh"
+  publish = ".next/"
+
+[dev]
+  framework = "next"
+
+# Functions are automatically available at /.netlify/functions/* by Netlify
