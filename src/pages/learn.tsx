@@ -4,12 +4,13 @@ import { useAuth } from '@clerk/nextjs'
 import { useUserTier } from '@/hooks/useUserTier'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { useAppDispatch } from '@/hooks/useAppDispatch'
-import { 
-  setLearnerProfile, 
-  setCurrentPrompt,
+import {
+  setLearnerProfile,
   ExperienceLevel,
   LearningStyle
 } from '@/store/genieSlice'
+import { useGenieStream } from '@/hooks/useGenieStream'
+import GenieResult from '@/components/GenieResult'
 import Link from 'next/link'
 
 const FREE_MONTHLY_LIMIT = 3
@@ -17,29 +18,19 @@ const FREE_MONTHLY_LIMIT = 3
 export default function Learn() {
   const { isSignedIn } = useAuth()
   const { tier, isPro, isLoading: tierLoading } = useUserTier()
-  const { learnerProfile, generationCount } = useAppSelector(state => state.genie)
+  const { learnerProfile, generationCount, isGenerating } = useAppSelector(state => state.genie)
   const dispatch = useAppDispatch()
-  
+  const { generate, connected, error } = useGenieStream()
+
   const [prompt, setPrompt] = useState('')
   const [showOnboarding, setShowOnboarding] = useState(true)
-  const [isGenerating, setIsGenerating] = useState(false)
 
   const remainingGenerations = FREE_MONTHLY_LIMIT - generationCount
   const canGenerate = isPro || remainingGenerations > 0
 
-  const handleGenerate = async () => {
-    if (!prompt.trim() || !canGenerate) return
-    
-    setIsGenerating(true)
-    dispatch(setCurrentPrompt(prompt))
-    
-    // TODO: Call the actual generation API
-    console.log('Generating tutorial for prompt:', prompt)
-    // For now, simulate a delay
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    setIsGenerating(false)
-    // TODO: Navigate to results page or show inline
+  const handleGenerate = () => {
+    if (!canGenerate) return
+    generate(prompt)
   }
 
   const examplePrompts = [
@@ -142,9 +133,9 @@ export default function Learn() {
             />
             <button
               onClick={handleGenerate}
-              disabled={!prompt.trim() || !canGenerate || isGenerating}
+              disabled={!prompt.trim() || !canGenerate || isGenerating || !connected}
               className={`absolute bottom-4 right-4 px-6 py-2 rounded-lg font-semibold transition-all ${
-                !prompt.trim() || !canGenerate || isGenerating
+                !prompt.trim() || !canGenerate || isGenerating || !connected
                   ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                   : 'btn-primary'
               }`}
@@ -176,6 +167,16 @@ export default function Learn() {
                 Upgrade to Pro →
               </Link>
             )}
+          </div>
+
+          {!connected && (
+            <p className="text-sm text-yellow-500 mb-4">Connecting to the generator…</p>
+          )}
+          {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+
+          {/* live streaming IDE */}
+          <div className="mb-8">
+            <GenieResult />
           </div>
 
           {/* Example prompts */}

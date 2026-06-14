@@ -1,7 +1,11 @@
 import Head from 'next/head'
 import { useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
+import { useSelector } from 'react-redux'
 import { useUserTier } from '@/hooks/useUserTier'
+import { useGenieStream } from '@/hooks/useGenieStream'
+import GenieResult from '@/components/GenieResult'
+import type { RootState } from '@/store'
 import Link from 'next/link'
 
 type CreatorMode = 'ai-generate' | 'from-scratch' | 'import'
@@ -14,17 +18,11 @@ export default function Create() {
   const [mode, setMode] = useState<CreatorMode | null>(null)
   const [projectType, setProjectType] = useState<ProjectType>('tutorial')
   const [prompt, setPrompt] = useState('')
-  const [isGenerating, setIsGenerating] = useState(false)
 
-  const handleGenerate = async () => {
-    if (!prompt.trim()) return
-    setIsGenerating(true)
-    
-    // TODO: Call actual generation API
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    setIsGenerating(false)
-  }
+  const { generate, connected, error } = useGenieStream()
+  const isGenerating = useSelector((s: RootState) => s.genie.isGenerating)
+
+  const handleGenerate = () => generate(prompt)
 
   if (!mode) {
     return (
@@ -207,9 +205,9 @@ export default function Create() {
           {/* Generate button */}
           <button
             onClick={handleGenerate}
-            disabled={!prompt.trim() || isGenerating}
+            disabled={!prompt.trim() || isGenerating || !connected}
             className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-              !prompt.trim() || isGenerating
+              !prompt.trim() || isGenerating || !connected
                 ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                 : 'btn-primary'
             }`}
@@ -227,6 +225,18 @@ export default function Create() {
           <p className="text-center text-sm text-gray-500 mt-4">
             Generation typically takes 30-60 seconds depending on complexity
           </p>
+
+          {!connected && (
+            <p className="text-center text-sm text-yellow-500 mt-2">
+              Connecting to the generator…
+            </p>
+          )}
+          {error && <p className="text-center text-sm text-red-500 mt-2">{error}</p>}
+
+          {/* live streaming IDE */}
+          <div className="mt-8">
+            <GenieResult />
+          </div>
         </div>
       </div>
     </>
