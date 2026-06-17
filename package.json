@@ -12,18 +12,24 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.84",
+    "@ai-sdk/google": "^3.0.82",
+    "@ai-sdk/openai": "^3.0.71",
+    "@ai-sdk/react": "^3.0.207",
     "@clerk/nextjs": "^6.34.1",
     "@fullstackcraftllc/codevideo-ide-react": "^0.0.180",
     "@fullstackcraftllc/codevideo-types": "^2.2.0",
     "@radix-ui/themes": "^3.2.1",
     "@reduxjs/toolkit": "^2.9.2",
+    "ai": "^6.0.205",
     "next": "^15.1.4",
     "next-themes": "^0.4.6",
     "react": "^19.0.0",
     "react-confetti": "^6.4.0",
     "react-dom": "^19.0.0",
     "react-redux": "^9.2.0",
-    "redux-persist": "^6.0.0"
+    "redux-persist": "^6.0.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^22",

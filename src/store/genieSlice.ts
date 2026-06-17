@@ -96,6 +96,58 @@ const genieSlice = createSlice({
       state.isGenerating = false
       state.isComplete = false
     },
+
+    // --- BYOK helper: build + edit the generated actions ---
+    // appendAction / appendActions stream FORWARD like the WS path (no rewind),
+    // so the helper can BUILD a lesson live, not just edit one. The surgical
+    // edits below (insert/edit/delete/move) instead rewind playback to 0 and
+    // clear isComplete: a non-append change bumps the IDE's actionsEpoch, and
+    // rewinding makes it replay the *corrected* lesson from the top (the index-0
+    // path's 1s start delay debounces a multi-tool batch into one clean replay).
+    // Bounds are guarded defensively even though the tools validate first.
+    appendAction(state, action: PayloadAction<IAction>) {
+      state.generatedActions.push(action.payload)
+      state.isComplete = false
+    },
+    appendActions(state, action: PayloadAction<IAction[]>) {
+      state.generatedActions.push(...action.payload)
+      state.isComplete = false
+    },
+    insertActionAfter(state, action: PayloadAction<{ index: number; action: IAction }>) {
+      const { index, action: newAction } = action.payload
+      // index -1 inserts at the front; clamp into [-1, length-1]
+      const at = Math.min(Math.max(index, -1), state.generatedActions.length - 1)
+      state.generatedActions.splice(at + 1, 0, newAction)
+      state.currentActionIndex = 0
+      state.isComplete = false
+    },
+    editAction(state, action: PayloadAction<{ index: number; action: IAction }>) {
+      const { index, action: newAction } = action.payload
+      if (index >= 0 && index < state.generatedActions.length) {
+        state.generatedActions[index] = newAction
+        state.currentActionIndex = 0
+        state.isComplete = false
+      }
+    },
+    deleteAction(state, action: PayloadAction<number>) {
+      const index = action.payload
+      if (index >= 0 && index < state.generatedActions.length) {
+        state.generatedActions.splice(index, 1)
+        state.currentActionIndex = 0
+        state.isComplete = false
+      }
+    },
+    moveAction(state, action: PayloadAction<{ from: number; to: number }>) {
+      const { from, to } = action.payload
+      const len = state.generatedActions.length
+      if (from >= 0 && from < len) {
+        const [moved] = state.generatedActions.splice(from, 1)
+        const dest = Math.min(Math.max(to, 0), state.generatedActions.length)
+        state.generatedActions.splice(dest, 0, moved)
+        state.currentActionIndex = 0
+        state.isComplete = false
+      }
+    },
     setIsGenerating(state, action: PayloadAction<boolean>) {
       state.isGenerating = action.payload
     },
@@ -126,9 +178,20 @@ export const {
   finishGeneration,
   markComplete,
   setGeneratedActions,
+  appendAction,
+  appendActions,
+  insertActionAfter,
+  editAction,
+  deleteAction,
+  moveAction,
   setIsGenerating,
   incrementGenerationCount,
   resetGenie,
 } = genieSlice.actions
+
+// namespace export so the BYOK tool registry can dispatch without colliding
+// with same-named tool functions (e.g. the editAction tool vs the editAction
+// action creator)
+export const genieActions = genieSlice.actions
 
 export default genieSlice.reducer

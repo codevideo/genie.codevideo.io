@@ -5,6 +5,7 @@ import { useSelector } from 'react-redux'
 import { useUserTier } from '@/hooks/useUserTier'
 import { useGenieStream } from '@/hooks/useGenieStream'
 import GenieResult from '@/components/GenieResult'
+import GenieHelperPanel from '@/components/GenieHelperPanel'
 import type { RootState } from '@/store'
 import Link from 'next/link'
 
@@ -236,6 +237,11 @@ export default function Create() {
           {/* live streaming IDE */}
           <div className="mt-8">
             <GenieResult />
+          </div>
+
+          {/* BYOK AI editing helper */}
+          <div className="mt-6">
+            <GenieHelperPanel />
           </div>
         </div>
       </div>

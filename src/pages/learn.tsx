@@ -11,6 +11,7 @@ import {
 } from '@/store/genieSlice'
 import { useGenieStream } from '@/hooks/useGenieStream'
 import GenieResult from '@/components/GenieResult'
+import GenieHelperPanel from '@/components/GenieHelperPanel'
 import Link from 'next/link'
 
 const FREE_MONTHLY_LIMIT = 3
@@ -177,6 +178,11 @@ export default function Learn() {
           {/* live streaming IDE */}
           <div className="mb-8">
             <GenieResult />
+          </div>
+
+          {/* BYOK AI editing helper */}
+          <div className="mb-8">
+            <GenieHelperPanel />
           </div>
 
           {/* Example prompts */}

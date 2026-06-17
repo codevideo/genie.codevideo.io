@@ -5,4 +5,9 @@
 [dev]
   framework = "next"
 
-# Functions are automatically available at /.netlify/functions/* by Netlify
+# Functions (the Go stripeSuccess + the TS ai-helper BYOK transport) live in
+# functions/ and are served at /.netlify/functions/*. Declared explicitly so the
+# TS function is bundled regardless of any dashboard setting; the TS file is
+# bundled by esbuild, the Go binary by build-go-functions.sh above.
+[functions]
+  directory = "functions"

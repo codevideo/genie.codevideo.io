@@ -44,7 +44,15 @@ export default function GenieResult() {
       </div>
 
       <div style={{ height: '70vh', width: '100%' }}>
-        <Theme accentColor="purple" appearance="dark" panelBackground="translucent" radius="large">
+        {/* Theme must fill the 70vh box: it renders a height:auto div that would
+            otherwise collapse, squashing the IDE's height:100% root inside it. */}
+        <Theme
+          accentColor="purple"
+          appearance="dark"
+          panelBackground="translucent"
+          radius="large"
+          style={{ height: '100%', width: '100%' }}
+        >
           <CodeVideoIDE
             theme="dark"
             project={generatedActions}

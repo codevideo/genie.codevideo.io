@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
+import { useAuth } from '@clerk/nextjs'
 import type { AppDispatch } from '@/store'
 import {
   startGeneration,
@@ -21,15 +22,23 @@ const API_URL = process.env.NEXT_PUBLIC_GENIE_API_URL || 'http://localhost:3000'
  * The WS connects on mount so the client is registered before any generate()
  * call — broadcasts only reach already-connected clients.
  */
+// a stable per-tab id so the backend streams a generation only to THIS client
+const makeSessionId = () =>
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2)
+
 export const useGenieStream = () => {
   const dispatch = useDispatch<AppDispatch>()
+  const { getToken } = useAuth()
   const socketRef = useRef<WebSocket | null>(null)
+  const sessionIdRef = useRef<string>(makeSessionId())
   const [connected, setConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const ws = new WebSocket(WS_URL)
+    const ws = new WebSocket(`${WS_URL}?sessionId=${encodeURIComponent(sessionIdRef.current)}`)
     socketRef.current = ws
 
     ws.onopen = () => setConnected(true)
@@ -79,18 +88,24 @@ export const useGenieStream = () => {
       setError(null)
       dispatch(startGeneration(prompt))
       try {
+        // Clerk session token gates the server's LLM key; null when signed out
+        const token = await getToken().catch(() => null)
         const res = await fetch(`${API_URL}/codevideo-mcp/agent`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt }),
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ prompt, sessionId: sessionIdRef.current }),
         })
+        if (res.status === 401) throw new Error('Please sign in to generate.')
         if (!res.ok) throw new Error(`Generator responded ${res.status}`)
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to start generation')
         dispatch(finishGeneration())
       }
     },
-    [dispatch]
+    [dispatch, getToken]
   )
 
   return { generate, connected, error }
