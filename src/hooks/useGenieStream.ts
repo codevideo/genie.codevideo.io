@@ -45,6 +45,7 @@ export const useGenieStream = () => {
     ws.onclose = () => setConnected(false)
     ws.onerror = () => setError(`Could not reach the generator at ${WS_URL}`)
     ws.onmessage = (event) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let msg: any
       try {
         msg = JSON.parse(event.data as string)
